@@ -1,0 +1,61 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Step 3 – Apps Script Editor</title><link rel="stylesheet" href="shared.css"></head><body>
+<div class="browser-chrome">
+  <div class="browser-tabs"><div class="browser-tab"><span>Apps Script – tracker.js</span><span class="close">✕</span></div></div>
+  <div class="browser-nav">
+    <button class="nav-btn">←</button><button class="nav-btn disabled">→</button><button class="nav-btn">↻</button>
+    <div class="address-bar"><span class="lock">🔒</span><span class="url">script.google.com/home/projects/<em>script-id</em>/edit</span></div>
+  </div>
+</div>
+<div style="display:flex;height:calc(100vh - 90px);min-height:700px;">
+  <!-- Sidebar -->
+  <div style="width:220px;background:#f8f9fa;border-right:1px solid #e0e0e0;display:flex;flex-direction:column;">
+    <div style="padding:12px 16px;border-bottom:1px solid #e0e0e0;font-size:15px;font-weight:500;color:#202124;">📄 Reading Tracker</div>
+    <div style="padding:8px 0;">
+      <div style="padding:4px 8px;font-size:11px;font-weight:700;color:#5f6368;text-transform:uppercase;letter-spacing:.5px;">Files</div>
+      <div class="script-file active">📄 tracker.js</div>
+    </div>
+    <div style="margin-top:auto;padding:16px;border-top:1px solid #e0e0e0;">
+      <div style="font-size:12px;color:#5f6368;">Executions</div>
+      <div style="font-size:12px;color:#5f6368;margin-top:4px;">Triggers</div>
+    </div>
+  </div>
+  <!-- Editor area -->
+  <div style="flex:1;display:flex;flex-direction:column;background:#1e1e1e;">
+    <div class="code-toolbar">
+      <select style="background:#2d2d2d;color:#d4d4d4;border:none;font-size:13px;padding:4px;">evaluatePendingEntries</select>
+      <button class="code-run-btn">▶ Run</button>
+      <button class="code-save-btn" style="background:#2d2d2d;color:#d4d4d4;border:1px solid #5f6368;border-radius:4px;padding:6px 16px;font-size:13px;cursor:pointer;">💾 Save</button>
+      <div style="position:relative;display:inline-block">
+        <div class="callout arrow-down" style="position:absolute;bottom:48px;left:-20px;background:#ea4335;white-space:nowrap">3. Click Save after pasting</div>
+      </div>
+    </div>
+    <div class="code-content">
+      <div style="margin-bottom:8px;color:#6a9955;font-family:monospace;font-size:13px;">// ============================================================</div>
+      <div style="color:#6a9955;font-family:monospace;font-size:13px;">//  READING TRACKER — Google Apps Script  (v3 — Open Source)</div>
+      <div style="color:#6a9955;font-family:monospace;font-size:13px;">// ============================================================</div>
+      <div style="margin-top:12px;font-family:monospace;font-size:13px;">
+        <span style="color:#569cd6;">const</span> <span style="color:#4fc1ff;">TABS</span> = {<br>
+        &nbsp;&nbsp;<span style="color:#9cdcfe;">SETTINGS</span>: <span style="color:#ce9178;">"⚙️ Settings"</span>,<br>
+        &nbsp;&nbsp;<span style="color:#9cdcfe;">DAILY_LOG</span>: <span style="color:#ce9178;">"📖 Daily Log"</span>,<br>
+        &nbsp;&nbsp;<span style="color:#9cdcfe;">EVALUATIONS</span>: <span style="color:#ce9178;">"🎯 Claude Evaluations"</span>,<br>
+        };<br><br>
+        <span style="color:#569cd6;">function</span> <span style="color:#dcdcaa;">evaluatePendingEntries</span>() {<br>
+        &nbsp;&nbsp;<span style="color:#569cd6;">const</span> <span style="color:#9cdcfe;">settings</span> = <span style="color:#dcdcaa;">_getSettings</span>();<br>
+        &nbsp;&nbsp;<span style="color:#c586c0;">if</span> (!settings) { <span style="color:#9cdcfe;">Logger</span>.<span style="color:#dcdcaa;">log</span>(<span style="color:#ce9178;">"Settings not found"</span>); <span style="color:#c586c0;">return</span>; }<br>
+        &nbsp;&nbsp;<span style="color:#6a9955;">// calls Anthropic / OpenAI / Gemini API …</span><br>
+        }<br>
+      </div>
+      <div style="margin-top:24px;background:#2a2a2a;border:1px solid #3c3c3c;border-radius:4px;padding:12px;color:#d4d4d4;font-size:13px;font-family:monospace;">
+        <div style="color:#9aa0a6;margin-bottom:8px;">↑ Select all (Cmd+A), delete, then paste the full tracker.js here</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div style="position:fixed;top:140px;right:40px;background:#ea4335;color:#fff;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:500;box-shadow:0 2px 8px rgba(0,0,0,.3);max-width:240px;line-height:1.5;">
+  <div style="font-weight:700;margin-bottom:4px;">How to paste the code:</div>
+  1. Cmd+A to select all<br>
+  2. Delete existing code<br>
+  3. Cmd+V to paste tracker.js<br>
+  4. Click 💾 Save (or Cmd+S)
+</div>
+</body></html>

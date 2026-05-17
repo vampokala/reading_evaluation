@@ -1,0 +1,40 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Step 5 – Setup Wizard Step 1</title><link rel="stylesheet" href="shared.css"></head><body>
+<div class="browser-chrome">
+  <div class="browser-tabs"><div class="browser-tab"><span>Reading Tracker – Tejas 2025 – Google Sheets</span><span class="close">✕</span></div></div>
+  <div class="browser-nav"><button class="nav-btn">←</button><button class="nav-btn">→</button><button class="nav-btn">↻</button>
+    <div class="address-bar"><span class="lock">🔒</span><span class="url">docs.google.com/spreadsheets/d/<em>your-sheet-id</em>/edit</span></div>
+  </div>
+</div>
+<div style="position:relative;">
+  <!-- blurred sheet in background -->
+  <div class="sheets-app" style="filter:blur(2px);pointer-events:none;opacity:.5;min-height:700px;">
+    <div class="sheets-header">
+      <div class="sheets-title-row">
+        <svg class="sheets-icon" viewBox="0 0 32 32"><rect width="32" height="32" rx="2" fill="#188038"/></svg>
+        <div class="sheets-title"><input type="text" value="Reading Tracker – Tejas 2025" style="font-size:18px;width:300px;"></div>
+      </div>
+      <div class="sheets-menu-bar"><div class="menu-item">File</div><div class="menu-item">Edit</div><div class="menu-item" style="color:#1a73e8">📚 Reading Tracker</div></div>
+    </div>
+    <div style="flex:1;background:#f8f9fa;"></div>
+  </div>
+  <!-- Dialog overlay -->
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;">
+    <div class="dialog" style="min-width:520px;">
+      <div class="dialog-title">📚 Reading Tracker Setup — Step 1 of 4</div>
+      <div class="dialog-body">Welcome! Your ⚙️ Settings tab has been created.
+
+Please fill in ALL rows now:
+  • STUDENT NAME — your child's first name
+  • GRADE — integer 1 through 12
+  • READING DAYS — e.g. Mon,Tue,Wed,Thu,Fri,Sat
+  • ALERT HOUR — hour to send missing-entry email (0–23)
+  • EVAL HOUR — hour Claude evaluates summaries (0–23)
+  • Parent, sibling, and student email addresses
+  • AI PROVIDER — Claude, OpenAI, or Gemini
+
+<strong style="color:#1a73e8;">Click OK once the ⚙️ Settings tab is filled in.</strong></div>
+      <div class="dialog-footer"><button class="btn-ok">OK</button></div>
+    </div>
+  </div>
+</div>
+</body></html>

@@ -6,6 +6,8 @@ Parents fill in a Settings tab once. Students log their reading daily. Claude ev
 
 Works for any student, **grades K–12**, with rubrics that adapt automatically.
 
+> 📖 **New to this?** Follow the [**Visual Setup Guide**](docs/SETUP_GUIDE.md) — 11 illustrated steps with screenshots, no technical knowledge required.
+
 ---
 
 ## How It Works
@@ -68,6 +70,8 @@ Pick one provider and get an API key before starting setup:
 ---
 
 ## One-Time Setup (5–10 minutes)
+
+> 💡 Prefer visuals? The [**Setup Guide**](docs/SETUP_GUIDE.md) has a screenshot for every step below.
 
 ### Step 1 — Create a Google Sheet
 

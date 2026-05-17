@@ -1,0 +1,146 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Step 11 – Evaluation Email</title><link rel="stylesheet" href="shared.css">
+<style>
+.email-client { max-width:760px; margin:20px auto; font-family:Arial,sans-serif; background:#fff; border:1px solid #dadce0; border-radius:8px; overflow:hidden; }
+.email-toolbar { background:#f1f3f4; padding:8px 16px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #e0e0e0; }
+.email-toolbar-btn { background:none; border:1px solid #dadce0; border-radius:4px; padding:4px 12px; font-size:13px; cursor:pointer; color:#444; }
+.email-subject-bar { padding:16px 20px 8px; border-bottom:1px solid #f0f0f0; }
+.email-subject { font-size:22px; font-weight:400; color:#202124; margin-bottom:10px; }
+.email-meta { display:flex; align-items:flex-start; gap:10px; }
+.email-avatar { width:40px; height:40px; border-radius:50%; background:#1a73e8; color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:500; flex-shrink:0; }
+.email-from-info { flex:1; }
+.email-from-name { font-weight:500; font-size:14px; color:#202124; }
+.email-from-addr { font-size:12px; color:#5f6368; }
+.email-date { font-size:12px; color:#5f6368; margin-left:auto; white-space:nowrap; }
+.email-to-line { font-size:12px; color:#5f6368; margin-top:2px; }
+.email-body { padding:20px; }
+.email-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; max-width:600px; margin:0 auto; }
+.email-card-header { background:#1a73e8; color:#fff; padding:16px 20px; }
+.email-card-header-title { font-size:20px; font-weight:500; margin-bottom:2px; }
+.email-card-header-sub { font-size:13px; opacity:.85; }
+.email-card-body { padding:20px; }
+.eval-section { margin-bottom:18px; }
+.eval-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#9aa0a6; margin-bottom:6px; }
+.eval-value { font-size:14px; color:#202124; line-height:1.5; }
+.score-badge { display:inline-block; background:#e8f5e9; color:#137333; font-size:24px; font-weight:700; border-radius:8px; padding:6px 18px; border:2px solid #a8d5b5; }
+.tag-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+.tag { display:inline-block; border-radius:12px; padding:3px 10px; font-size:12px; }
+.tag-orange { background:#fff3e0; color:#e65100; border:1px solid #ffcc80; }
+.tag-purple { background:#f3e5f5; color:#6a1b9a; border:1px solid #ce93d8; }
+.divider { border:none; border-top:1px solid #e0e0e0; margin:16px 0; }
+.question-item { padding:8px 0; border-bottom:1px solid #f5f5f5; font-size:13px; color:#202124; }
+.question-item:last-child { border-bottom:none; }
+.q-num { display:inline-block; width:20px; font-weight:700; color:#1a73e8; }
+.answer-box { background:#fff9c4; border-radius:6px; padding:10px 14px; font-size:13px; color:#5f6368; font-style:italic; margin-top:4px; border-left:3px solid #f9a825; }
+.email-card-footer { background:#f8f9fa; padding:12px 20px; text-align:center; font-size:12px; color:#9aa0a6; border-top:1px solid #e0e0e0; }
+.btn-view { display:inline-block; background:#1a73e8; color:#fff; border-radius:4px; padding:8px 20px; font-size:13px; text-decoration:none; margin:4px 0; }
+</style>
+</head><body>
+
+<div class="browser-chrome">
+  <div class="browser-tabs"><div class="browser-tab"><span>Reading Tracker – Eval Email – Gmail</span><span class="close">✕</span></div></div>
+  <div class="browser-nav"><button class="nav-btn">←</button><button class="nav-btn">→</button><button class="nav-btn">↻</button>
+    <div class="address-bar"><span class="lock">🔒</span><span class="url">mail.google.com/mail/u/0/#inbox/abc123</span></div>
+  </div>
+</div>
+
+<div class="email-client">
+  <div class="email-toolbar">
+    <button class="email-toolbar-btn">← Back</button>
+    <button class="email-toolbar-btn">🗑 Delete</button>
+    <button class="email-toolbar-btn">↩ Reply</button>
+    <button class="email-toolbar-btn">→ Forward</button>
+  </div>
+
+  <div class="email-subject-bar">
+    <div class="email-subject">📚 Tejas's Reading Evaluation – Hatchet Ch. 3 – Score: 7/10</div>
+    <div class="email-meta">
+      <div class="email-avatar">R</div>
+      <div class="email-from-info">
+        <div class="email-from-name">Reading Tracker <span style="font-weight:400;color:#5f6368;">&lt;no-reply@reading-tracker.appscript.google.com&gt;</span></div>
+        <div class="email-to-line">to dad@gmail.com, mom@gmail.com, tejas@gmail.com, sibling@gmail.com</div>
+      </div>
+      <div class="email-date">Sun, May 17, 2026, 8:02 PM</div>
+    </div>
+  </div>
+
+  <div class="email-body">
+    <div class="email-card">
+      <div class="email-card-header">
+        <div class="email-card-header-title">📚 Reading Evaluation — May 17, 2026</div>
+        <div class="email-card-header-sub">Tejas · Grade 6 · Hatchet, Chapter 3 · Pages 28–41</div>
+      </div>
+
+      <div class="email-card-body">
+
+        <!-- Score -->
+        <div class="eval-section">
+          <div class="eval-label">Score</div>
+          <div class="score-badge">7 / 10</div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Tejas's Summary -->
+        <div class="eval-section">
+          <div class="eval-label">Tejas's Summary</div>
+          <div class="eval-value">Brian found the hatchet in the tail section of the crashed plane. He used it to break through the windshield and escape before the plane sank. He swam to shore and collapsed on the beach, exhausted but alive.</div>
+        </div>
+
+        <!-- Claude Evaluation -->
+        <div class="eval-section">
+          <div class="eval-label">Claude's Evaluation</div>
+          <div class="eval-value">Good recall of the key event — Tejas correctly identified the hatchet and the escape sequence. Brian's emotional state when escaping could be developed further. The summary is factually accurate but focuses mainly on plot action without explaining the significance of the hatchet as a survival symbol.</div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Missing Evidence -->
+        <div class="eval-section">
+          <div class="eval-label">Missing Evidence Points</div>
+          <div class="tag-row">
+            <span class="tag tag-orange">No mention of Brian's fear or emotional state</span>
+            <span class="tag tag-orange">Did not explain why the hatchet was significant</span>
+            <span class="tag tag-orange">Missing the detail about water filling the cockpit</span>
+          </div>
+        </div>
+
+        <!-- Improvement Steps -->
+        <div class="eval-section">
+          <div class="eval-label">Improvement Steps for Next Time</div>
+          <div class="tag-row">
+            <span class="tag tag-purple">Include at least one character emotion with evidence</span>
+            <span class="tag tag-purple">Explain why an object matters to the story</span>
+            <span class="tag tag-purple">Try to include one specific detail per key event</span>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Questions -->
+        <div class="eval-section">
+          <div class="eval-label">Questions for Tejas to Answer</div>
+          <div class="question-item"><span class="q-num">1.</span> What feeling did Brian describe as the plane sank?</div>
+          <div class="answer-box">Brian felt terrified and desperate as the plane sank. He describes his heart pounding as the cold water rose around him…</div>
+          <div class="question-item" style="margin-top:8px;"><span class="q-num">2.</span> Why does the hatchet become important later in the story?</div>
+          <div class="answer-box" style="color:#9aa0a6;font-style:italic;">← Tejas hasn't answered this yet</div>
+          <div class="question-item" style="margin-top:8px;"><span class="q-num">3.</span> How might Brian's survival skills change as the story continues?</div>
+          <div class="answer-box" style="color:#9aa0a6;font-style:italic;">← Tejas hasn't answered this yet</div>
+        </div>
+
+        <hr class="divider">
+
+        <div style="text-align:center;padding:8px 0;">
+          <a class="btn-view" href="#">View in Google Sheet →</a>
+          <div style="font-size:12px;color:#9aa0a6;margin-top:8px;">Tejas can answer the questions directly in the <strong>Tejas's Answers</strong> column of the sheet.</div>
+        </div>
+
+      </div><!-- email-card-body -->
+
+      <div class="email-card-footer">
+        Reading Tracker · Auto-generated at 8:00 PM · <a href="#" style="color:#1a73e8;">Unsubscribe</a>
+      </div>
+    </div><!-- email-card -->
+  </div><!-- email-body -->
+</div><!-- email-client -->
+
+</body></html>

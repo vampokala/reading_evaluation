@@ -182,7 +182,7 @@ function _getSettings() {
   const sheet = ss.getSheetByName(TABS.SETTINGS);
   if (!sheet) return null;
 
-  const vals = sheet.getRange(1, 2, 13, 1).getValues().map(r => r[0]);
+  const vals = sheet.getRange(1, 2, 14, 1).getValues().map(r => r[0]);
 
   const studentName  = vals[0]  ? String(vals[0]).trim()  : "Student";
   const grade        = vals[1]  ? parseInt(vals[1], 10)   : 6;
@@ -196,6 +196,8 @@ function _getSettings() {
   const siblingName  = vals[9]  ? String(vals[9]).trim()  : "";
   const siblingEmail = vals[10] ? String(vals[10]).trim() : "";
   const studentEmail = vals[11] ? String(vals[11]).trim() : "";
+  const aiProvider   = vals[12] ? String(vals[12]).trim() : "Claude";  // row 13
+  const aiModel      = vals[13] ? String(vals[13]).trim() : "";         // row 14 (optional override)
 
   const family = [];
   if (parent1Name  && parent1Email)  family.push({ name: parent1Name,  email: parent1Email  });
@@ -207,6 +209,7 @@ function _getSettings() {
     studentName, grade, readingDays, alertHour, evalHour,
     parent1Name, parent1Email, parent2Name, parent2Email,
     siblingName, siblingEmail, studentEmail,
+    aiProvider, aiModel,
     family,
   };
 }
@@ -239,16 +242,13 @@ function _getBooksForGrade(grade) {
 
 /**
  * evaluatePendingEntries() — called by a time-based trigger.
- * Finds every Daily Log row with a summary but no Claude evaluation,
- * calls the Anthropic API for each, writes results to the sheet,
- * and emails the family.  No external tools required.
+ * Finds every Daily Log row with a summary but no AI evaluation yet,
+ * calls the configured AI provider for each, writes results to the
+ * sheet, and emails the family.  No external tools required.
  */
 function evaluatePendingEntries() {
   const settings = _getSettings();
   if (!settings) { Logger.log("Settings tab not found — skipping evaluation."); return; }
-
-  const apiKey = PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
-  if (!apiKey) { Logger.log("ANTHROPIC_API_KEY not set — skipping evaluation."); return; }
 
   const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const logSheet  = ss.getSheetByName(TABS.DAILY_LOG);
@@ -256,22 +256,22 @@ function evaluatePendingEntries() {
   const data      = logSheet.getDataRange().getValues();
 
   for (let i = 1; i < data.length; i++) {
-    const row       = data[i];
-    const date      = row[0];
-    const book      = row[1];
-    const chapter   = row[2];
-    const summary   = row[6];   // col G
-    const claudeEval = row[8];  // col I
+    const row        = data[i];
+    const date       = row[0];
+    const book       = row[1];
+    const chapter    = row[2];
+    const summary    = row[6];   // col G
+    const aiEval     = row[8];   // col I
 
     const hasSummary = summary && summary.toString().trim() !== ""
                     && !summary.toString().includes("← fills this");
-    const needsEval  = !claudeEval || claudeEval.toString().trim() === "";
+    const needsEval  = !aiEval || aiEval.toString().trim() === "";
 
     if (!hasSummary || !needsEval) continue;
 
     const entry = {
       rowNumber: i + 1,
-      date:      date ? _formatDate(new Date(date)) : "",
+      date:      date    ? _formatDate(new Date(date)) : "",
       book:      book    ? book.toString()    : "",
       chapter:   chapter ? chapter.toString() : "",
       startPage: row[3]  ? row[3].toString()  : "",
@@ -280,7 +280,7 @@ function evaluatePendingEntries() {
     };
 
     try {
-      const result = _evaluateEntry(entry, settings, apiKey);
+      const result = _evaluateEntry(entry, settings);
       _writeEvaluationToSheet(logSheet, evalSheet, entry, result);
       _sendEvaluationEmail(entry, result, settings);
     } catch (err) {
@@ -293,9 +293,10 @@ function evaluatePendingEntries() {
 }
 
 /**
- * Builds the prompt, calls the Claude API, and returns a parsed result object.
+ * Builds the evaluation prompt, calls the configured AI provider,
+ * and returns a normalised result object.
  */
-function _evaluateEntry(entry, settings, apiKey) {
+function _evaluateEntry(entry, settings) {
   const rubric = _getGradeRubric(settings.grade);
   const prompt = `You are evaluating a reading comprehension summary written by a student.
 
@@ -320,18 +321,15 @@ Evaluate this summary and respond with ONLY a valid JSON object — no markdown,
   "questions": ["Question 1?", "Question 2?", "Question 3?"]
 }`;
 
-  const raw = _callClaudeAPI(prompt, apiKey);
-
-  // Strip markdown code fences if Claude wraps the JSON
+  const raw     = _callAIProvider(prompt, settings);
   const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
   const parsed  = JSON.parse(cleaned);
 
-  // Normalise — guard against Claude returning arrays instead of strings
-  const _str = (v, sep) => Array.isArray(v) ? v.join(sep) : (v != null ? String(v) : "");
+  const _str    = (v, sep) => Array.isArray(v) ? v.join(sep) : (v != null ? String(v) : "");
   const rawScore = Array.isArray(parsed.score) ? parsed.score[0] : parsed.score;
 
   return {
-    evaluation:   _str(parsed.evaluation,   " "),
+    evaluation:    _str(parsed.evaluation,    " "),
     missingPoints: _str(parsed.missingPoints, "\n"),
     improvements:  _str(parsed.improvements,  "\n"),
     score:         parseFloat(rawScore) || 0,
@@ -339,11 +337,47 @@ Evaluate this summary and respond with ONLY a valid JSON object — no markdown,
   };
 }
 
+// ============================================================
+//  AI PROVIDER ROUTER
+// ============================================================
+
+// Default models per provider — overridable via row 14 (AI MODEL) in Settings.
+const DEFAULT_MODELS = {
+  claude: "claude-opus-4-7",
+  openai: "gpt-4o",
+  gemini: "gemini-2.0-flash",
+};
+
 /**
- * Calls the Anthropic Messages API via UrlFetchApp.
- * Returns the raw text content of Claude's reply.
+ * Routes the prompt to the provider chosen in ⚙️ Settings (row 13).
+ * Retrieves the matching API key from PropertiesService.
  */
-function _callClaudeAPI(prompt, apiKey) {
+function _callAIProvider(prompt, settings) {
+  const provider = (settings.aiProvider || "Claude").toLowerCase();
+  const props    = PropertiesService.getScriptProperties();
+
+  if (provider === "openai") {
+    const key = props.getProperty("OPENAI_API_KEY");
+    if (!key) throw new Error('OpenAI API key not set. Use "🔑 Update API Key" from the menu.');
+    return _callOpenAI(prompt, key, settings.aiModel || DEFAULT_MODELS.openai);
+  }
+
+  if (provider === "gemini") {
+    const key = props.getProperty("GEMINI_API_KEY");
+    if (!key) throw new Error('Gemini API key not set. Use "🔑 Update API Key" from the menu.');
+    return _callGemini(prompt, key, settings.aiModel || DEFAULT_MODELS.gemini);
+  }
+
+  // Default: Claude (Anthropic)
+  const key = props.getProperty("ANTHROPIC_API_KEY");
+  if (!key) throw new Error('Anthropic API key not set. Run Setup Wizard or use "🔑 Update API Key".');
+  return _callClaudeAPI(prompt, key, settings.aiModel || DEFAULT_MODELS.claude);
+}
+
+/**
+ * Calls the Anthropic Messages API.
+ */
+function _callClaudeAPI(prompt, apiKey, model) {
   const response = UrlFetchApp.fetch("https://api.anthropic.com/v1/messages", {
     method: "post",
     headers: {
@@ -352,7 +386,7 @@ function _callClaudeAPI(prompt, apiKey) {
       "content-type":      "application/json",
     },
     payload: JSON.stringify({
-      model:      "claude-opus-4-7",
+      model:      model || DEFAULT_MODELS.claude,
       max_tokens: 1024,
       messages:   [{ role: "user", content: prompt }],
     }),
@@ -361,11 +395,56 @@ function _callClaudeAPI(prompt, apiKey) {
 
   const code = response.getResponseCode();
   if (code !== 200) {
-    throw new Error(`Anthropic API returned HTTP ${code}: ${response.getContentText().substring(0, 200)}`);
+    throw new Error(`Anthropic API error ${code}: ${response.getContentText().substring(0, 200)}`);
   }
+  return JSON.parse(response.getContentText()).content[0].text;
+}
 
-  const body = JSON.parse(response.getContentText());
-  return body.content[0].text;
+/**
+ * Calls the OpenAI Chat Completions API.
+ */
+function _callOpenAI(prompt, apiKey, model) {
+  const response = UrlFetchApp.fetch("https://api.openai.com/v1/chat/completions", {
+    method: "post",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type":  "application/json",
+    },
+    payload: JSON.stringify({
+      model:      model || DEFAULT_MODELS.openai,
+      max_tokens: 1024,
+      messages:   [{ role: "user", content: prompt }],
+    }),
+    muteHttpExceptions: true,
+  });
+
+  const code = response.getResponseCode();
+  if (code !== 200) {
+    throw new Error(`OpenAI API error ${code}: ${response.getContentText().substring(0, 200)}`);
+  }
+  return JSON.parse(response.getContentText()).choices[0].message.content;
+}
+
+/**
+ * Calls the Google Gemini generateContent API.
+ */
+function _callGemini(prompt, apiKey, model) {
+  const url      = `https://generativelanguage.googleapis.com/v1beta/models/${model || DEFAULT_MODELS.gemini}:generateContent?key=${apiKey}`;
+  const response = UrlFetchApp.fetch(url, {
+    method: "post",
+    headers: { "Content-Type": "application/json" },
+    payload: JSON.stringify({
+      contents:       [{ parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 1024 },
+    }),
+    muteHttpExceptions: true,
+  });
+
+  const code = response.getResponseCode();
+  if (code !== 200) {
+    throw new Error(`Gemini API error ${code}: ${response.getContentText().substring(0, 200)}`);
+  }
+  return JSON.parse(response.getContentText()).candidates[0].content.parts[0].text;
 }
 
 /**
@@ -459,7 +538,7 @@ function doPost(e) {
 
     const rawScore = Array.isArray(payload.score) ? payload.score[0] : payload.score;
     const result = {
-      evaluation:    _toString(payload.evaluation,   "\n"),
+      evaluation:    _toString(payload.evaluation,    "\n"),
       missingPoints: _toString(payload.missingPoints, "\n• "),
       improvements:  _toString(payload.improvements,  "\n• "),
       score:         parseFloat(rawScore) || 0,
@@ -639,21 +718,27 @@ function runSetupWizard() {
     return;
   }
 
-  // Step 3 — Anthropic API key (stored securely, never in sheet)
-  const keyResult = ui.prompt(
-    "🔐 Step 2 of 4: Anthropic API Key",
-    "Enter your Anthropic API key (starts with sk-ant-...).\n\n" +
+  // Step 3 — API key for chosen provider (stored securely, never in sheet)
+  const provider    = settings.aiProvider || "Claude";
+  const keyInfo     = _providerKeyInfo(provider);
+  const keyResult   = ui.prompt(
+    `🔐 Step 2 of 4: ${provider} API Key`,
+    `Enter your ${keyInfo.label}.\n\n` +
     "This is stored in Script Properties — it will NEVER appear in the sheet or any cell.\n\n" +
-    "Get your key at console.anthropic.com → API Keys.",
+    `Get your key at: ${keyInfo.url}`,
     ui.ButtonSet.OK_CANCEL
   );
   if (keyResult.getSelectedButton() !== ui.Button.OK) return;
   const apiKey = keyResult.getResponseText().trim();
-  if (!apiKey || !apiKey.startsWith("sk-ant-")) {
-    ui.alert("❌ Invalid key format. Keys start with sk-ant-. Please run the wizard again.");
+  if (!apiKey) {
+    ui.alert("❌ No key entered. Please run the wizard again.");
     return;
   }
-  PropertiesService.getScriptProperties().setProperty("ANTHROPIC_API_KEY", apiKey);
+  if (keyInfo.prefix && !apiKey.startsWith(keyInfo.prefix)) {
+    ui.alert(`❌ That doesn't look like a ${provider} key (expected to start with "${keyInfo.prefix}"). Please check and try again.`);
+    return;
+  }
+  PropertiesService.getScriptProperties().setProperty(keyInfo.prop, apiKey);
 
   // Step 4 — build all sheet tabs
   ui.alert(
@@ -690,15 +775,84 @@ function runSetupWizard() {
 //  TRIGGER MANAGEMENT
 // ============================================================
 
+// ============================================================
+//  API KEY MANAGEMENT
+// ============================================================
+
+/**
+ * Returns label, PropertiesService key name, key prefix, and docs URL
+ * for the given provider name.
+ */
+function _providerKeyInfo(provider) {
+  switch ((provider || "Claude").toLowerCase()) {
+    case "openai":
+      return {
+        label:  "OpenAI API Key",
+        prop:   "OPENAI_API_KEY",
+        prefix: "sk-",
+        url:    "platform.openai.com → API Keys",
+      };
+    case "gemini":
+      return {
+        label:  "Google Gemini API Key",
+        prop:   "GEMINI_API_KEY",
+        prefix: "AIza",
+        url:    "aistudio.google.com → Get API Key",
+      };
+    default: // Claude
+      return {
+        label:  "Anthropic API Key",
+        prop:   "ANTHROPIC_API_KEY",
+        prefix: "sk-ant-",
+        url:    "console.anthropic.com → API Keys",
+      };
+  }
+}
+
+/**
+ * updateApiKey() — lets parents update or add an API key for any provider
+ * without re-running the full Setup Wizard.
+ */
+function updateApiKey() {
+  const ui       = SpreadsheetApp.getUi();
+  const settings = _getSettings();
+  const provider = settings ? settings.aiProvider : "Claude";
+  const keyInfo  = _providerKeyInfo(provider);
+
+  const result = ui.prompt(
+    `🔑 Update ${provider} API Key`,
+    `Enter your ${keyInfo.label}.\n\n` +
+    "Stored securely — will NEVER appear in the sheet.\n\n" +
+    `Get your key at: ${keyInfo.url}`,
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (result.getSelectedButton() !== ui.Button.OK) return;
+
+  const key = result.getResponseText().trim();
+  if (!key) { ui.alert("No key entered — nothing changed."); return; }
+  if (keyInfo.prefix && !key.startsWith(keyInfo.prefix)) {
+    ui.alert(`⚠️ That doesn't look like a ${provider} key (expected to start with "${keyInfo.prefix}").\nKey was NOT saved. Please check and try again.`);
+    return;
+  }
+
+  PropertiesService.getScriptProperties().setProperty(keyInfo.prop, key);
+  ui.alert(`✅ ${provider} API key saved successfully.`);
+}
+
+// ============================================================
+//  TRIGGER MANAGEMENT
+// ============================================================
+
 function installTrigger() {
   const settings = _getSettings();
   const alert    = settings ? settings.alertHour : 7;
   const eval_    = settings ? settings.evalHour  : 20;
+  const provider = settings ? settings.aiProvider : "Claude";
   _installTriggersSilent(alert, eval_);
   SpreadsheetApp.getUi().alert(
     `✅ Two triggers installed:\n` +
     `  ${alert}:00 — daily missing-entry reminder\n` +
-    `  ${eval_}:00 — Claude evaluates summaries`
+    `  ${eval_}:00 — AI evaluation (${provider})`
   );
 }
 
@@ -768,38 +922,62 @@ function setupSheet() {
 }
 
 function _setupSettings(ss) {
-  if (ss.getSheetByName(TABS.SETTINGS)) return; // don't overwrite existing data
+  let sheet = ss.getSheetByName(TABS.SETTINGS);
 
-  const sheet = ss.insertSheet(TABS.SETTINGS, 0);
-  sheet.setTabColor("#607D8B");
+  if (!sheet) {
+    sheet = ss.insertSheet(TABS.SETTINGS, 0);
+    sheet.setTabColor("#607D8B");
 
-  const rows = [
-    ["STUDENT NAME",    ""],
-    ["GRADE",           ""],
-    ["READING DAYS",    "Mon,Tue,Wed,Thu,Fri,Sat"],
-    ["ALERT HOUR (AM)", "7"],
-    ["EVAL HOUR (PM)",  "20"],
-    ["PARENT 1 NAME",   ""],
-    ["PARENT 1 EMAIL",  ""],
-    ["PARENT 2 NAME",   ""],
-    ["PARENT 2 EMAIL",  ""],
-    ["SIBLING NAME",    ""],
-    ["SIBLING EMAIL",   ""],
-    ["STUDENT EMAIL",   ""],
-  ];
+    const rows = [
+      ["STUDENT NAME",    ""],
+      ["GRADE",           ""],
+      ["READING DAYS",    "Mon,Tue,Wed,Thu,Fri,Sat"],
+      ["ALERT HOUR (AM)", "7"],
+      ["EVAL HOUR (PM)",  "20"],
+      ["PARENT 1 NAME",   ""],
+      ["PARENT 1 EMAIL",  ""],
+      ["PARENT 2 NAME",   ""],
+      ["PARENT 2 EMAIL",  ""],
+      ["SIBLING NAME",    ""],
+      ["SIBLING EMAIL",   ""],
+      ["STUDENT EMAIL",   ""],
+      ["AI PROVIDER",     "Claude"],
+      ["AI MODEL",        ""],
+    ];
 
-  sheet.getRange(1, 1, rows.length, 2).setValues(rows);
+    sheet.getRange(1, 1, rows.length, 2).setValues(rows);
 
-  const labelCol = sheet.getRange(1, 1, rows.length, 1);
-  labelCol.setBackground("#37474F").setFontColor("#ffffff").setFontWeight("bold");
-  sheet.setColumnWidth(1, 200);
-  sheet.setColumnWidth(2, 400);
-  sheet.setFrozenColumns(1);
+    const labelCol = sheet.getRange(1, 1, rows.length, 1);
+    labelCol.setBackground("#37474F").setFontColor("#ffffff").setFontWeight("bold");
+    sheet.setColumnWidth(1, 200);
+    sheet.setColumnWidth(2, 400);
+    sheet.setFrozenColumns(1);
 
-  sheet.getRange(2, 2).setNote("Integer 1–12. Drives the grade rubric for AI evaluation.");
-  sheet.getRange(3, 2).setNote("Comma-separated 3-letter codes: Mon,Tue,Wed,Thu,Fri,Sat,Sun");
-  sheet.getRange(4, 2).setNote("24h format (0–23). 7 = 7 AM. Missing-entry reminder.");
-  sheet.getRange(5, 2).setNote("24h format (0–23). 20 = 8 PM. Claude evaluation trigger.");
+    sheet.getRange(2,  2).setNote("Integer 1–12. Drives the grade rubric for AI evaluation.");
+    sheet.getRange(3,  2).setNote("Comma-separated 3-letter codes: Mon,Tue,Wed,Thu,Fri,Sat,Sun");
+    sheet.getRange(4,  2).setNote("24h format (0–23). 7 = 7 AM. Missing-entry reminder.");
+    sheet.getRange(5,  2).setNote("24h format (0–23). 20 = 8 PM. Evaluation trigger.");
+    sheet.getRange(14, 2).setNote("Optional. Leave blank to use the default model for the chosen provider.");
+  }
+
+  // Always ensure AI PROVIDER row exists and has a dropdown — handles upgrades from older versions
+  const providerCell = sheet.getRange(13, 1).getValue();
+  if (providerCell !== "AI PROVIDER") {
+    sheet.getRange(13, 1).setValue("AI PROVIDER")
+      .setBackground("#37474F").setFontColor("#ffffff").setFontWeight("bold");
+    if (!sheet.getRange(13, 2).getValue()) sheet.getRange(13, 2).setValue("Claude");
+  }
+  sheet.getRange(13, 2).setDataValidation(
+    SpreadsheetApp.newDataValidation()
+      .requireValueInList(["Claude", "OpenAI", "Gemini"], true).build()
+  );
+
+  const modelCell = sheet.getRange(14, 1).getValue();
+  if (modelCell !== "AI MODEL") {
+    sheet.getRange(14, 1).setValue("AI MODEL")
+      .setBackground("#37474F").setFontColor("#ffffff").setFontWeight("bold");
+    sheet.getRange(14, 2).setNote("Optional. Leave blank for default: Claude Opus 4.7 / GPT-4o / Gemini 2.0 Flash");
+  }
 }
 
 function _setupDailyLog(ss) {
@@ -1006,6 +1184,7 @@ function onOpen() {
     .createMenu("📚 Reading Tracker")
     .addItem("🚀 Run Setup Wizard (first time)", "runSetupWizard")
     .addItem("▶️ Evaluate Now (manual run)", "evaluatePendingEntries")
+    .addItem("🔑 Update API Key", "updateApiKey")
     .addSeparator()
     .addItem("🔄 Update Headers Only (safe — keeps data)", "updateHeadersOnly")
     .addItem("🛠️ Fix Corrupted Cells in Evaluations Tab", "fixEvaluationsTab")

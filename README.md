@@ -51,9 +51,19 @@ Works for any student, **grades K–12**, with rubrics that adapt automatically.
 | What you need | Where to get it |
 |---------------|-----------------|
 | Google account | Already have one |
-| Anthropic API key | [console.anthropic.com](https://console.anthropic.com) → API Keys → Create Key |
+| API key from **one** AI provider (see table below) | See provider table |
 
-> **API cost:** Each evaluation calls `claude-opus-4-7`. One evaluation ≈ $0.01–$0.03 depending on summary length. A full month of daily reading ≈ $0.30–$0.90.
+### Choose Your AI Provider
+
+Pick one provider and get an API key before starting setup:
+
+| Provider | Default Model | Key Format | Get Key At | Est. Cost / Evaluation |
+|----------|--------------|------------|------------|------------------------|
+| **Claude** (Anthropic) | claude-opus-4-7 | `sk-ant-...` | [console.anthropic.com](https://console.anthropic.com) → API Keys | ~$0.01–$0.03 |
+| **OpenAI** | gpt-4o | `sk-...` | [platform.openai.com](https://platform.openai.com) → API Keys | ~$0.01–$0.03 |
+| **Gemini** (Google) | gemini-2.0-flash | `AIza...` | [aistudio.google.com](https://aistudio.google.com) → Get API Key | ~$0.001–$0.005 |
+
+> You can switch providers at any time by updating the **AI PROVIDER** row in the ⚙️ Settings tab and running **🔑 Update API Key** from the menu.
 
 ---
 
@@ -320,6 +330,7 @@ Status column:
 |-----------|-------------|
 | 🚀 Run Setup Wizard | First-time guided setup — run once |
 | ▶️ Evaluate Now | Manually trigger evaluation right now (useful for testing) |
+| 🔑 Update API Key | Add or replace the API key for whichever provider is set in ⚙️ Settings |
 | 🔄 Update Headers Only | Refresh column headers/formatting without touching data |
 | 🛠️ Fix Corrupted Cells | Clears any `[Ljava.lang.Object;@...` garbage from old bugs |
 | ⚙️ Rebuild All Sheet Tabs | Nuclear option — clears and recreates all tabs |
@@ -347,8 +358,14 @@ All settings live in Column B of the **⚙️ Settings** tab. Only Column B is e
 | 10 | SIBLING NAME | Any text (optional) | `Shreyas (Brother)` |
 | 11 | SIBLING EMAIL | Email address (optional) | `sibling@gmail.com` |
 | 12 | STUDENT EMAIL | Email address | `student@gmail.com` |
+| 13 | AI PROVIDER | `Claude` / `OpenAI` / `Gemini` | `Claude` |
+| 14 | AI MODEL | Model name (optional) | *(leave blank for default)* |
 
-> **After changing any setting:** Triggers re-read settings on every fire — most changes take effect automatically. If you change ALERT HOUR or EVAL HOUR, run **⏰ Reinstall Daily Triggers** from the menu.
+> **Rows 13–14** are new in v3. If you're upgrading from an earlier version, run **🚀 Run Setup Wizard** once — it will add the missing rows without touching your existing data.
+
+> **After changing AI PROVIDER:** Run **🔑 Update API Key** from the menu to store the key for the new provider. Evaluation will use the new provider immediately on the next trigger fire.
+
+> **After changing ALERT HOUR or EVAL HOUR:** Run **⏰ Reinstall Daily Triggers** from the menu.
 
 ---
 
@@ -385,18 +402,23 @@ Claude automatically applies an age-appropriate rubric based on the GRADE settin
 
 The most common cause is the key expiring or being revoked.
 
-1. Go to [console.anthropic.com](https://console.anthropic.com) → API Keys.
-2. Create a new key.
-3. Open the Apps Script editor → Run `storeApiKey` (or re-run the Setup Wizard).
+**Quickest fix:** Click **📚 Reading Tracker → 🔑 Update API Key** and paste your new key. That's it.
 
-To update the key without re-running the full wizard:
-1. Extensions → Apps Script
-2. Add this one-time function, run it, then delete it:
+If you need to create a new key:
+
+| Provider | Where to go |
+|----------|------------|
+| Claude | console.anthropic.com → API Keys → Create Key |
+| OpenAI | platform.openai.com → API Keys → Create new |
+| Gemini | aistudio.google.com → Get API Key |
+
+To verify which key is set (without revealing it), open Apps Script → Extensions → Apps Script, and run this one-time function:
 
 ```javascript
-function storeApiKey() {
-  PropertiesService.getScriptProperties()
-    .setProperty("ANTHROPIC_API_KEY", "sk-ant-YOUR-NEW-KEY-HERE");
+function checkKeySet() {
+  const props = PropertiesService.getScriptProperties().getProperties();
+  const keys  = Object.keys(props).filter(k => k.includes("API_KEY"));
+  Logger.log("Keys configured: " + keys.join(", "));
 }
 ```
 

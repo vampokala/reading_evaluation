@@ -1,0 +1,18 @@
+{
+  "name": "reading-evaluation",
+  "version": "1.0.0",
+  "description": "**A Google Sheets + Apps Script tool that gives your child AI-powered reading feedback every night — automatically.**",
+  "main": "tracker.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}

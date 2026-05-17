@@ -1,0 +1,40 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Step 7 – API Key Dialog</title><link rel="stylesheet" href="shared.css"></head><body>
+<div class="browser-chrome">
+  <div class="browser-tabs"><div class="browser-tab"><span>Reading Tracker – Tejas 2025 – Google Sheets</span><span class="close">✕</span></div></div>
+  <div class="browser-nav"><button class="nav-btn">←</button><button class="nav-btn">→</button><button class="nav-btn">↻</button>
+    <div class="address-bar"><span class="lock">🔒</span><span class="url">docs.google.com/spreadsheets/d/<em>your-sheet-id</em>/edit</span></div>
+  </div>
+</div>
+<div style="position:relative;">
+  <div class="sheets-app" style="filter:blur(2px);pointer-events:none;opacity:.4;min-height:700px;">
+    <div class="sheets-header">
+      <div class="sheets-title-row">
+        <svg class="sheets-icon" viewBox="0 0 32 32"><rect width="32" height="32" rx="2" fill="#188038"/></svg>
+        <div class="sheets-title"><input type="text" value="Reading Tracker – Tejas 2025" style="font-size:18px;width:300px;"></div>
+      </div>
+      <div class="sheets-menu-bar"><div class="menu-item">File</div><div class="menu-item" style="color:#1a73e8">📚 Reading Tracker</div></div>
+    </div>
+    <div style="flex:1;background:#f8f9fa;height:600px;"></div>
+  </div>
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;">
+    <div class="dialog" style="min-width:540px;">
+      <div class="dialog-title">🔐 Step 2 of 4: Claude API Key</div>
+      <div class="dialog-body">Enter your Anthropic API key (starts with sk-ant-...).
+
+This is stored in Script Properties — it will <strong>NEVER</strong> appear in the sheet or any cell.
+
+Get your key at: <span style="color:#1a73e8;">console.anthropic.com → API Keys</span>
+
+<div style="margin-top:4px;padding:10px;background:#e8f5e9;border-radius:4px;border-left:3px solid #4caf50;font-size:13px;">
+  🔒 The key is encrypted by Google and only accessible to your script. No one else can read it — not even from the spreadsheet.
+</div>
+      </div>
+      <div style="padding:0 24px 4px;">
+        <input type="password" class="dialog-input" placeholder="sk-ant-api03-••••••••••••••••••••••••••" style="color:#202124;font-family:monospace;">
+      </div>
+      <div style="padding:4px 24px 12px;font-size:12px;color:#9aa0a6;">For OpenAI: starts with sk-  •  For Gemini: starts with AIza</div>
+      <div class="dialog-footer"><button class="btn-cancel">Cancel</button><button class="btn-ok">OK</button></div>
+    </div>
+  </div>
+</div>
+</body></html>

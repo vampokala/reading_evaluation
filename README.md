@@ -333,7 +333,8 @@ Status column:
 | Menu Item | What It Does |
 |-----------|-------------|
 | 🚀 Run Setup Wizard | First-time guided setup — run once |
-| ▶️ Evaluate Now | Manually trigger evaluation right now (useful for testing) |
+| ▶️ Evaluate Now (all pending) | Evaluates every Daily Log row that has a summary but no score yet |
+| 🎯 Evaluate Selected Row | **On-demand:** click any cell in a Daily Log row, then run this to evaluate that row immediately — re-evaluates even if a score already exists |
 | 🔑 Update API Key | Add or replace the API key for whichever provider is set in ⚙️ Settings |
 | 🔄 Update Headers Only | Refresh column headers/formatting without touching data |
 | 🛠️ Fix Corrupted Cells | Clears any `[Ljava.lang.Object;@...` garbage from old bugs |

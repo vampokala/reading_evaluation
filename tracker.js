@@ -246,6 +246,129 @@ function _getBooksForGrade(grade) {
  * calls the configured AI provider for each, writes results to the
  * sheet, and emails the family.  No external tools required.
  */
+/**
+ * evaluateSelectedRow() — on-demand evaluation for a single row.
+ *
+ * Parent clicks any cell in a Daily Log row, then picks this from the menu.
+ * Works even if the row was already evaluated — useful when a child finishes
+ * a partial summary and the parent wants a fresh score immediately.
+ *
+ * Steps:
+ *  1. Validate the active sheet is the Daily Log and the row has a summary.
+ *  2. Confirm before overwriting an existing evaluation.
+ *  3. Clear the old result from Daily Log cols I/J/L and matching Evaluations row.
+ *  4. Run the evaluation and write fresh results + send email.
+ */
+function evaluateSelectedRow() {
+  const ui       = SpreadsheetApp.getUi();
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const active   = ss.getActiveSheet();
+
+  // Must be on the Daily Log tab
+  if (active.getName() !== TABS.DAILY_LOG) {
+    ui.alert("⚠️ Please switch to the 📖 Daily Log tab and click on the row you want to evaluate, then try again.");
+    return;
+  }
+
+  const rowNum = ss.getActiveRange().getRow();
+
+  // Row 1 is the header
+  if (rowNum <= 1) {
+    ui.alert("⚠️ That's the header row. Click on a data row (row 2 or below) and try again.");
+    return;
+  }
+
+  const settings = _getSettings();
+  if (!settings) { ui.alert("⚠️ Settings tab not found. Run the Setup Wizard first."); return; }
+
+  const logSheet  = active;
+  const evalSheet = ss.getSheetByName(TABS.EVALUATIONS);
+  const rowData   = logSheet.getRange(rowNum, 1, 1, 12).getValues()[0];
+
+  const date      = rowData[0];
+  const book      = rowData[1];
+  const chapter   = rowData[2];
+  const summary   = rowData[6];   // col G
+  const existingEval = rowData[8]; // col I
+
+  const hasSummary = summary && summary.toString().trim() !== ""
+                  && !summary.toString().includes("← fills this");
+
+  if (!hasSummary) {
+    ui.alert("⚠️ No summary found in this row (column G). Ask your child to write their summary first.");
+    return;
+  }
+
+  // If already evaluated, confirm overwrite
+  if (existingEval && existingEval.toString().trim() !== "") {
+    const label = [book, chapter].filter(Boolean).join(" – ");
+    const resp  = ui.alert(
+      "🔄 Re-evaluate this row?",
+      `A score already exists for ${label}.\n\nOverwrite with a fresh evaluation?`,
+      ui.ButtonSet.YES_NO
+    );
+    if (resp !== ui.Button.YES) return;
+
+    // Clear Daily Log cols I (eval), J (questions), L (status)
+    logSheet.getRange(rowNum, 9).clearContent();
+    logSheet.getRange(rowNum, 10).clearContent();
+    logSheet.getRange(rowNum, 12).clearContent();
+
+    // Remove matching row(s) from Evaluations tab
+    _removeEvaluationRows(evalSheet, date, book, chapter);
+  }
+
+  const entry = {
+    rowNumber: rowNum,
+    date:      date    ? _formatDate(new Date(date)) : "",
+    book:      book    ? book.toString()    : "",
+    chapter:   chapter ? chapter.toString() : "",
+    startPage: rowData[3] ? rowData[3].toString() : "",
+    endPage:   rowData[4] ? rowData[4].toString()  : "",
+    summary:   summary.toString(),
+  };
+
+  ss.toast("⏳ Evaluating… this takes 10–20 seconds.", "On-Demand Evaluation");
+
+  try {
+    const result = _evaluateEntry(entry, settings);
+    _writeEvaluationToSheet(logSheet, evalSheet, entry, result);
+    _sendEvaluationEmail(entry, result, settings);
+    SpreadsheetApp.flush();
+    ss.toast(`✅ Done! Score: ${result.score}/10`, "Evaluation Complete", 8);
+  } catch (err) {
+    logSheet.getRange(rowNum, 9).setValue(`⚠️ Evaluation failed: ${err.message}`);
+    ui.alert(`❌ Evaluation failed: ${err.message}`);
+  }
+}
+
+/**
+ * Removes rows from the Evaluations tab that match date + book + chapter.
+ * Called before a re-evaluation so there are no duplicate rows.
+ */
+function _removeEvaluationRows(evalSheet, date, book, chapter) {
+  const dateStr    = date    ? _formatDate(new Date(date)) : "";
+  const bookStr    = book    ? book.toString().trim()    : "";
+  const chapterStr = chapter ? chapter.toString().trim() : "";
+
+  const data = evalSheet.getDataRange().getValues();
+  // Walk backwards so row indices stay valid as we delete
+  for (let i = data.length - 1; i >= 1; i--) {
+    const rowDate    = data[i][0] ? _formatDate(new Date(data[i][0])) : "";
+    const rowBook    = data[i][1] ? data[i][1].toString().trim() : "";
+    const rowChapter = data[i][2] ? data[i][2].toString().trim() : "";
+    if (rowDate === dateStr && rowBook === bookStr && rowChapter === chapterStr) {
+      evalSheet.deleteRow(i + 1); // +1 because sheet rows are 1-indexed
+    }
+  }
+}
+
+/**
+ * evaluatePendingEntries() — called by a time-based trigger.
+ * Finds every Daily Log row with a summary but no AI evaluation yet,
+ * calls the configured AI provider for each, writes results to the
+ * sheet, and emails the family.  No external tools required.
+ */
 function evaluatePendingEntries() {
   const settings = _getSettings();
   if (!settings) { Logger.log("Settings tab not found — skipping evaluation."); return; }
@@ -1183,7 +1306,8 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("📚 Reading Tracker")
     .addItem("🚀 Run Setup Wizard (first time)", "runSetupWizard")
-    .addItem("▶️ Evaluate Now (manual run)", "evaluatePendingEntries")
+    .addItem("▶️ Evaluate Now (all pending)", "evaluatePendingEntries")
+    .addItem("🎯 Evaluate Selected Row (on-demand)", "evaluateSelectedRow")
     .addItem("🔑 Update API Key", "updateApiKey")
     .addSeparator()
     .addItem("🔄 Update Headers Only (safe — keeps data)", "updateHeadersOnly")

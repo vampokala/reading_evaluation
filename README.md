@@ -63,7 +63,7 @@ Pick one provider and get an API key before starting setup:
 |----------|--------------|------------|------------|------------------------|
 | **Claude** (Anthropic) | claude-opus-4-7 | `sk-ant-...` | [console.anthropic.com](https://console.anthropic.com) → API Keys | ~$0.01–$0.03 |
 | **OpenAI** | gpt-4o | `sk-...` | [platform.openai.com](https://platform.openai.com) → API Keys | ~$0.01–$0.03 |
-| **Gemini** (Google) | gemini-2.0-flash | `AIza...` | [aistudio.google.com](https://aistudio.google.com) → Get API Key | ~$0.001–$0.005 |
+| **Gemini** (Google) | gemini-2.0-flash | `AIza...` or `AQ...` | [aistudio.google.com](https://aistudio.google.com) → Get API Key | ~$0.001–$0.005 |
 
 > You can switch providers at any time by updating the **AI PROVIDER** row in the ⚙️ Settings tab and running **🔑 Update API Key** from the menu.
 

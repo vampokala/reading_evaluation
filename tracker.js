@@ -857,8 +857,9 @@ function runSetupWizard() {
     ui.alert("❌ No key entered. Please run the wizard again.");
     return;
   }
-  if (keyInfo.prefix && !apiKey.startsWith(keyInfo.prefix)) {
-    ui.alert(`❌ That doesn't look like a ${provider} key (expected to start with "${keyInfo.prefix}"). Please check and try again.`);
+  if (!_validKeyPrefix(apiKey, keyInfo.prefix)) {
+    const expected = Array.isArray(keyInfo.prefix) ? keyInfo.prefix.join('" or "') : keyInfo.prefix;
+    ui.alert(`❌ That doesn't look like a ${provider} key (expected to start with "${expected}"). Please check and try again.`);
     return;
   }
   PropertiesService.getScriptProperties().setProperty(keyInfo.prop, apiKey);
@@ -917,10 +918,10 @@ function _providerKeyInfo(provider) {
       };
     case "gemini":
       return {
-        label:  "Google Gemini API Key",
-        prop:   "GEMINI_API_KEY",
-        prefix: "AIza",
-        url:    "aistudio.google.com → Get API Key",
+        label:   "Google Gemini API Key",
+        prop:    "GEMINI_API_KEY",
+        prefix:  ["AIza", "AQ"],  // Google has used both; accept either format
+        url:     "aistudio.google.com → Get API Key",
       };
     default: // Claude
       return {
@@ -953,8 +954,9 @@ function updateApiKey() {
 
   const key = result.getResponseText().trim();
   if (!key) { ui.alert("No key entered — nothing changed."); return; }
-  if (keyInfo.prefix && !key.startsWith(keyInfo.prefix)) {
-    ui.alert(`⚠️ That doesn't look like a ${provider} key (expected to start with "${keyInfo.prefix}").\nKey was NOT saved. Please check and try again.`);
+  if (!_validKeyPrefix(key, keyInfo.prefix)) {
+    const expected = Array.isArray(keyInfo.prefix) ? keyInfo.prefix.join('" or "') : keyInfo.prefix;
+    ui.alert(`⚠️ That doesn't look like a ${provider} key (expected to start with "${expected}").\nKey was NOT saved. Please check and try again.`);
     return;
   }
 
@@ -1330,6 +1332,12 @@ function testMissingEmail() {
 // ============================================================
 //  UTILITIES
 // ============================================================
+
+function _validKeyPrefix(key, prefix) {
+  if (!prefix || (Array.isArray(prefix) && prefix.length === 0)) return true;
+  if (Array.isArray(prefix)) return prefix.some(p => key.startsWith(p));
+  return key.startsWith(prefix);
+}
 
 function _formatDate(date) {
   return Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd");

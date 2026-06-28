@@ -919,7 +919,7 @@ function _providerKeyInfo(provider) {
       return {
         label:  "Google Gemini API Key",
         prop:   "GEMINI_API_KEY",
-        prefix: "AIza",
+        prefix: "",   // Google has changed key formats (AIza → AQ); skip prefix check
         url:    "aistudio.google.com → Get API Key",
       };
     default: // Claude
